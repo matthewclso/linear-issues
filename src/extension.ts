@@ -5,7 +5,7 @@ import { Issue } from "@linear/import";
 const LINEAR_AUTHENTICATION_PROVIDER_ID = "linear";
 const LINEAR_AUTHENTICATION_SCOPES = ["read"];
 
-async function getLinearIssues(): Promise<Issue[]> {
+async function getClient(): Promise<LinearClient> {
   const session = await vscode.authentication.getSession(
     LINEAR_AUTHENTICATION_PROVIDER_ID,
     LINEAR_AUTHENTICATION_SCOPES,
@@ -21,48 +21,70 @@ async function getLinearIssues(): Promise<Issue[]> {
   const linearClient = new LinearClient({
     accessToken: session.accessToken,
   });
+  
+  return linearClient;
+}
+
+async function getLinearIssues(): Promise<Issue[]> {
+  const linearClient = await getClient();
 
   const allIssues = [];
   // get all linear issues for the user
-  const issues = await linearClient.issues(
+  let issues = await linearClient.issues(
     {
       first: 100,
     },
   );
   allIssues.push(...issues.nodes);
-  let counter = 1;
-  while (issues.pageInfo.hasNextPage && issues.pageInfo.endCursor) {
-    const nextIssues = await linearClient.issues({
+  while (issues.pageInfo.hasNextPage) {
+    issues = await linearClient.issues({
       first: 100,
       after: issues.pageInfo.endCursor,
     });
-    allIssues.push(...nextIssues.nodes);
-    counter++;
-    if (counter > 10) {
-      break;
-    }
+    allIssues.push(...issues.nodes);
+  }
+  return allIssues as unknown as Issue[];
+}
+
+async function getMyIssues(): Promise<Issue[]> {
+  const linearClient = await getClient();
+  
+  const allIssues = [];
+  // get all linear issues for the user
+  const me = await linearClient.viewer;
+  let issues = await me.assignedIssues(
+    {
+      first: 100,
+    },
+  );
+  allIssues.push(...issues.nodes);
+  while (issues.pageInfo.hasNextPage) {
+    issues = await me.assignedIssues({
+      first: 100,
+      after: issues.pageInfo.endCursor,
+    });
+    allIssues.push(...issues.nodes);
   }
   return allIssues as unknown as Issue[];
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	const disposable = vscode.commands.registerCommand('linear-issues.helloWorld', async () => {
-		
-    const issues = await getLinearIssues();
-    showIssuesInTreeView(issues);
-
-		vscode.window.showInformationMessage('Hello World from linear-issues!');
+	const disposable = vscode.commands.registerCommand('linear-issues.getIssues', async () => {
+    const allIssues = await getLinearIssues();
+    const myIssues = await getMyIssues();
+    showIssuesInTreeView(allIssues, 'allIssues');
+    showIssuesInTreeView(myIssues, 'myIssues');
 	});
 
 	context.subscriptions.push(disposable);
 }
 
-function showIssuesInTreeView(issues: Issue[]) {
+function showIssuesInTreeView(issues: Issue[], view: string) {
   const issueProvider = new LinearIssueProvider(issues);
-  vscode.window.registerTreeDataProvider('allIssues', issueProvider);
+  vscode.window.registerTreeDataProvider(view, issueProvider);
   vscode.commands.registerCommand('linear-issues.refreshIssues', async () => {
-      const updatedIssues = await getLinearIssues();
-      issueProvider.refresh(updatedIssues);
+    const updatedIssues = await getLinearIssues();
+    issueProvider.refresh(updatedIssues);
   });
 }
 

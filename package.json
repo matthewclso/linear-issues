@@ -11,14 +11,19 @@
   ],
   "activationEvents": [
     "onView:linearIssues",
-    "onCommand:linear-issues.helloWorld"
+    "onCommand:linear-issues.getIssues",
+    "onCommand:linear-issues.refreshIssues"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "linear-issues.helloWorld",
-        "title": "Hello World"
+        "command": "linear-issues.getIssues",
+        "title": "Linear Issues: Get Issues"
+      },
+      {
+        "command": "linear-issues.refreshIssues",
+        "title": "Linear Issues: Refresh Issues"
       }
     ],
     "viewsContainers": {
