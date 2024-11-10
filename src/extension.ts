@@ -25,7 +25,7 @@ async function getClient(): Promise<LinearClient> {
   return linearClient;
 }
 
-async function getLinearIssues(): Promise<Issue[]> {
+async function getAllIssues(): Promise<Issue[]> {
   const linearClient = await getClient();
 
   const allIssues = [];
@@ -69,23 +69,22 @@ async function getMyIssues(): Promise<Issue[]> {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	const disposable = vscode.commands.registerCommand('linear-issues.getIssues', async () => {
-    const allIssues = await getLinearIssues();
-    const myIssues = await getMyIssues();
-    showIssuesInTreeView(allIssues, 'allIssues');
-    showIssuesInTreeView(myIssues, 'myIssues');
-	});
-
-	context.subscriptions.push(disposable);
-}
-
-function showIssuesInTreeView(issues: Issue[], view: string) {
-  const issueProvider = new LinearIssueProvider(issues);
-  vscode.window.registerTreeDataProvider(view, issueProvider);
-  vscode.commands.registerCommand('linear-issues.refreshIssues', async () => {
-    const updatedIssues = await getLinearIssues();
-    issueProvider.refresh(updatedIssues);
+  const allIssuesProvider = new LinearIssueProvider();
+  vscode.window.registerTreeDataProvider('allIssues', allIssuesProvider);
+  vscode.commands.registerCommand('linear-issues.refreshAllIssues', async () => {
+    const updatedIssues = await getAllIssues();
+    allIssuesProvider.refresh(updatedIssues);
   });
+
+  const myIssuesProvider = new LinearIssueProvider();
+  vscode.window.registerTreeDataProvider('myIssues', myIssuesProvider);
+  vscode.commands.registerCommand('linear-issues.refreshMyIssues', async () => {
+    const updatedIssues = await getMyIssues();
+    myIssuesProvider.refresh(updatedIssues);
+  });
+
+  vscode.commands.executeCommand('linear-issues.refreshAllIssues');
+  vscode.commands.executeCommand('linear-issues.refreshMyIssues');
 }
 
 class LinearIssueProvider implements vscode.TreeDataProvider<Issue> {
@@ -94,8 +93,8 @@ class LinearIssueProvider implements vscode.TreeDataProvider<Issue> {
 
   private issues: Issue[];
 
-  constructor(issues: Issue[]) {
-    this.issues = issues;
+  constructor() {
+    this.issues = [];
   }
 
   // Refresh the list of issues
@@ -108,7 +107,7 @@ class LinearIssueProvider implements vscode.TreeDataProvider<Issue> {
   getTreeItem(element: Issue): vscode.TreeItem {
     const item = new vscode.TreeItem(element.title);
     item.description = element.description;
-    item.tooltip = ``;
+    item.tooltip = `${element.title}`;
     return item;
   }
 

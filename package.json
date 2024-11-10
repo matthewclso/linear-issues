@@ -11,19 +11,27 @@
   ],
   "activationEvents": [
     "onView:linearIssues",
-    "onCommand:linear-issues.getIssues",
-    "onCommand:linear-issues.refreshIssues"
+    "onCommand:linear-issues.refreshAllIssues",
+    "onCommand:linear-issues.refreshMyIssues"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "linear-issues.getIssues",
-        "title": "Linear Issues: Get Issues"
+        "command": "linear-issues.refreshAllIssues",
+        "title": "Linear Issues: Refresh All Issues",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       },
       {
-        "command": "linear-issues.refreshIssues",
-        "title": "Linear Issues: Refresh Issues"
+        "command": "linear-issues.refreshMyIssues",
+        "title": "Linear Issues: Refresh My Issues",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       }
     ],
     "viewsContainers": {
@@ -46,6 +54,20 @@
           "id": "myIssues",
           "name": "My Issues",
           "contextualTitle": "My Issues"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "linear-issues.refreshAllIssues",
+          "when": "view == allIssues",
+          "group": "navigation"
+        },
+        {
+          "command": "linear-issues.refreshMyIssues",
+          "when": "view == myIssues",
+          "group": "navigation"
         }
       ]
     }
