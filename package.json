@@ -2,6 +2,7 @@
   "name": "linear-issues",
   "displayName": "Linear Issue View",
   "description": "View your Linear issues categorized by team, project, and status.",
+  "publisher": "Matthew So",
   "author": "Matthew So",
   "license": "MIT",
   "version": "0.0.1",
