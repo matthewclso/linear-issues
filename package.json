@@ -56,12 +56,10 @@
         {
           "id": "allIssues",
           "name": "All Issues",
-          "contextualTitle": "All Issues"
         },
         {
           "id": "myIssues",
           "name": "My Issues",
-          "contextualTitle": "My Issues"
         }
       ]
     },
