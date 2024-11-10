@@ -1,8 +1,15 @@
 {
   "name": "linear-issues",
-  "displayName": "linear-issues",
-  "description": "",
+  "displayName": "Linear Issue View",
+  "description": "View your Linear issues categorized by team, project, and status.",
+  "author": "Matthew So",
+  "license": "MIT",
   "version": "0.0.1",
+  "icon": "resources/linear.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewclso/linear-issues"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },

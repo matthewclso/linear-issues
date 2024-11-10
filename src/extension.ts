@@ -163,30 +163,20 @@ async function getIssues(linearClient: LinearClient, me?: User): Promise<TeamCat
   return groupedIssues;
 }
 
-async function getAllIssues(): Promise<TeamCategory[]> {
-  const linearClient = await getClient();
-  return getIssues(linearClient);
-}
-
-async function getMyIssues(): Promise<TeamCategory[]> {
-  const linearClient = await getClient();
-  const me = await linearClient.viewer;
-  return getIssues(linearClient, me);
-}
-
 export function activate(context: vscode.ExtensionContext) {
   const allIssuesProvider = new LinearIssueProvider();
   vscode.window.registerTreeDataProvider('allIssues', allIssuesProvider);
   vscode.commands.registerCommand('linear-issues.refreshAllIssues', async () => {
-    const updatedCategories = await getAllIssues();
-    allIssuesProvider.refresh(updatedCategories);
+    const linearClient = await getClient();
+    allIssuesProvider.refresh(await getIssues(linearClient));
   });
 
   const myIssuesProvider = new LinearIssueProvider();
   vscode.window.registerTreeDataProvider('myIssues', myIssuesProvider);
   vscode.commands.registerCommand('linear-issues.refreshMyIssues', async () => {
-    const updatedCategories = await getMyIssues();
-    myIssuesProvider.refresh(updatedCategories);
+    const linearClient = await getClient();
+    const me = await linearClient.viewer;
+    myIssuesProvider.refresh(await getIssues(linearClient, me));
   });
 
   vscode.commands.executeCommand('linear-issues.refreshAllIssues');
