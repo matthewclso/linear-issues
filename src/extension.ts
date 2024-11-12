@@ -7,6 +7,9 @@ const LINEAR_AUTHENTICATION_SCOPES = ["read"];
 interface Issue {
   identifier: string;
   title: string;
+  team: string;
+  project: string;
+  state: string;
 }
 
 interface IssueCategory {
@@ -53,21 +56,23 @@ function groupBy<T, K extends keyof T>(arr: T[], key: K): Record<string, T[]> {
   );
 }
 
+interface IssueResponse {
+  identifier: string;
+  title: string;
+  team: {
+    name: string;
+  };
+  project: {
+    name: string;
+  } | null;
+  state: {
+    name: string;
+  };
+}
+
 interface IssuesResponse {
   issues: {
-    nodes: {
-      identifier: string;
-      title: string;
-      team: {
-        name: string;
-      };
-      project: {
-        name: string;
-      } | null;
-      state: {
-        name: string;
-      };
-    }[];
+    nodes: IssueResponse[];
     pageInfo: {
       hasNextPage: boolean;
       endCursor: string;
@@ -79,44 +84,79 @@ async function getIssues(
   linearClient: LinearClient,
   me?: User,
 ): Promise<TeamCategory[]> {
-  let issues = [];
+  const issuesResponse: IssueResponse[] = [];
 
-  const query = `
+  const baseQuery = `
+    nodes {
+      identifier
+      title
+      team {
+        name
+      }
+      project {
+        name
+      }
+      state {
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  `;
+
+  let baseFilter = "(first: 50)";
+  if (me) {
+    baseFilter =
+      baseFilter.slice(0, -1) +
+      `, filter: { assignee: { id: { eq: "${me.id}" } } })`;
+  }
+
+  let query = `
     query {
-      issues {
-        nodes {
-          identifier
-          title
-          team {
-            name
-          }
-          project {
-            name
-          }
-          state {
-            name
-          }
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
+      issues${baseFilter} {
+        ${baseQuery}
       }
     }
   `;
-  let data = (await linearClient.client
-    .rawRequest(query)
-    .then((response) => response.data)) as IssuesResponse;
-  issues.push(...data.issues.nodes);
 
-  if (data.issues.pageInfo.hasNextPage) {
-    data = (await linearClient.client
-      .rawRequest(query, { after: data.issues.pageInfo.endCursor })
-      .then((response) => response.data)) as IssuesResponse;
-    issues.push(...data.issues.nodes);
-  }
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Window,
+      cancellable: false,
+      title: "Fetching issues...",
+    },
+    async (progress) => {
+      progress.report({ increment: 0 });
 
-  issues = issues.map((issue) => ({
+      let data = (await linearClient.client
+        .rawRequest(query)
+        .then((response) => response.data)) as IssuesResponse;
+      issuesResponse.push(...data.issues.nodes);
+
+      while (data.issues.pageInfo.hasNextPage) {
+        const filter =
+          baseFilter.slice(0, -1) +
+          `, after: "${data.issues.pageInfo.endCursor}")`;
+        query = `
+        query {
+          issues${filter} {
+            ${baseQuery}
+          }
+        }
+      `;
+        data = (await linearClient.client
+          .rawRequest(query)
+          .then((response) => response.data)) as IssuesResponse;
+        issuesResponse.push(...data.issues.nodes);
+      }
+
+      progress.report({ increment: 100 });
+    },
+  );
+
+  let issues = issuesResponse.map((issue) => ({
     identifier: issue.identifier,
     title: issue.title,
     team: issue.team.name,
@@ -124,15 +164,12 @@ async function getIssues(
     state: issue.state.name,
   }));
 
-  // move 'No Project' issues to the beginning, starting from the end
-  let noProjectIndex = issues.length;
-  for (let i = issues.length - 1; i >= 0; i--) {
-    if (issues[i].project === "No project") {
-      const issue = issues.splice(i, 1)[0];
-      issues.unshift(issue);
-      noProjectIndex = i;
-    }
-  }
+  // move 'No Project' issues to the beginning
+  const noProjectIssues = issues.filter(
+    (issue) => issue.project === "No project",
+  );
+  issues = issues.filter((issue) => issue.project !== "No project");
+  issues = noProjectIssues.concat(issues);
 
   const groupedIssues: TeamCategory[] = [];
 
