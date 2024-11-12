@@ -55,11 +55,11 @@
       "linearIssues": [
         {
           "id": "allIssues",
-          "name": "All Issues",
+          "name": "All Issues"
         },
         {
           "id": "myIssues",
-          "name": "My Issues",
+          "name": "My Issues"
         }
       ]
     },
