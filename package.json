@@ -86,14 +86,12 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "prepare": "husky install"
   },
   "extensionDependencies": [
     "linear.linear-connect"
   ],
-  "dependencies": {
-    "@linear/sdk": "^1.22.0"
-  },
   "devDependencies": {
     "@types/mocha": "^10.0.9",
     "@types/node": "20.x",
@@ -103,6 +101,15 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.13.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@linear/sdk": "^32.0.0",
+    "prettier": "^3.3.3"
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix"
   }
 }
