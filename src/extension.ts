@@ -164,6 +164,11 @@ async function getIssues(
     state: issue.state.name,
   }));
 
+  // filter out issues that have 'Done', 'Canceled', or 'Duplicate' state
+  issues = issues.filter(
+    (issue) => !["Done", "Canceled", "Duplicate"].includes(issue.state),
+  );
+
   // move 'No Project' issues to the beginning
   const noProjectIssues = issues.filter(
     (issue) => issue.project === "No project",
